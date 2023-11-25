@@ -1,6 +1,6 @@
 from rest_framework.serializers import ModelSerializer
 
-from .models import Movie
+from .models import Movie, Address, Category, Client
 from .models import Language
 from .models import MovieDetails
 from .models import MovieRental
@@ -41,3 +41,29 @@ class MovieRentalSerializer(ModelSerializer):
             'id',
         ]
 
+
+class AddressSerializer(ModelSerializer):
+    class Meta:
+        model = Address
+        fields = '__all__'
+        read_only_fields = [
+            'id',
+        ]
+
+
+class CategorySerializer(ModelSerializer):
+    class Meta:
+        model = Category
+        fields = '__all__'
+        read_only_fields = [
+            'id',
+        ]
+
+
+class ClientSerializer(ModelSerializer):
+    class Meta:
+        model = Client
+        fields = '__all__'
+        read_only_fields = [
+            'id',
+        ]
