@@ -4,6 +4,10 @@ from django.utils import timezone
 from phonenumber_field.modelfields import PhoneNumberField
 
 
+class Category(models.Model):
+    name = models.CharField(blank=False)
+
+
 class Movie(models.Model):
     title = models.CharField(blank=False, null=False)
     description = models.CharField(blank=True, null=True)
@@ -20,10 +24,20 @@ class MovieDetails(models.Model):
     pegi = models.IntegerField(default=18)
     movie_length = models.IntegerField()
     languages = models.ManyToManyField('Language', blank=False, related_name='moviedetails_languages')
+    category = models.ManyToManyField(Category, blank=False)
 
 
 class Language(models.Model):
     language = models.CharField(blank=False, null=False)
+
+
+class Address(models.Model):
+    client = models.OneToOneField('Client', on_delete=models.CASCADE)
+    country = models.CharField(blank=False, null=False)
+    city = models.CharField(blank=False, null=False)
+    zip_code = models.CharField(blank=False, null=False)
+    street = models.CharField(blank=True, null=True)
+    building_number = models.CharField(blank=False, null=False)
 
 
 class Client(models.Model):
@@ -42,3 +56,4 @@ class MovieRental(models.Model):
     date_start = models.DateField(default=timezone.now)
     date_end = models.DateField(blank=True, null=True)
     days_rented = models.IntegerField(default=1)
+
