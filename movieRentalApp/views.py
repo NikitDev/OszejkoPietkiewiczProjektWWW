@@ -9,11 +9,17 @@ from .models import Movie
 from .models import Language
 from .models import MovieDetails
 from .models import MovieRental
+from .models import Address
+from .models import Client
+from .models import Category
 
 from .serializers import MovieSerializer
 from .serializers import MovieRentalSerializer
 from .serializers import MovieDetailsSerializer
 from .serializers import LanguageSerializer
+from .serializers import ClientSerializer
+from .serializers import AddressSerializer
+from .serializers import CategorySerializer
 
 
 class BearerTokenAuthentication(TokenAuthentication):
@@ -24,8 +30,11 @@ class MovieListView(APIView):
     authentication_classes = [SessionAuthentication, BasicAuthentication, BearerTokenAuthentication]
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
 
+    def get_queryset(self):
+        return Movie.objects.all()
+
     def get(self, request):
-        movies = Movie.objects.all().order_by('id')
+        movies = self.get_queryset().order_by('id')
         serializer = MovieSerializer(movies, many=True)
         return Response(serializer.data)
 
@@ -41,10 +50,13 @@ class MovieDetailsView(APIView):
     authentication_classes = [SessionAuthentication, BasicAuthentication, BearerTokenAuthentication]
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
 
+    def get_queryset(self):
+        return MovieDetails.objects.all()
+
     def get_object(self, pk):
         try:
-            return Movie.objects.get(pk=pk)
-        except Movie.DoesNotExist:
+            return self.get_queryset().get(pk=pk)
+        except MovieDetails.DoesNotExist:
             raise Http404
 
     def get(self, request, pk):
@@ -71,17 +83,16 @@ class MovieRentalListView(APIView):
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
 
     def get_queryset(self):
-        return MovieRental.objects.all()
+        if self.request.user.is_superuser:
+            return MovieRental.objects.all()
+        return MovieRental.objects.filter(client=self.request.user.client)
 
     def get(self, request):
-        movie_rentals = MovieRental.objects.all().order_by('id')
+        movie_rentals = self.get_queryset().order_by('id')
         serializer = MovieRentalSerializer(movie_rentals, many=True)
         return Response(serializer.data)
 
     def post(self, request):
-        # if not request.user.has_perm('movieRentalApp.add_movie_rental'):
-        #     raise PermissionDenied()
-
         serializer = MovieRentalSerializer(data=request.data, many=True)
         if serializer.is_valid():
             serializer.save()
@@ -93,10 +104,15 @@ class MovieRentalDetailsView(APIView):
     authentication_classes = [SessionAuthentication, BasicAuthentication, BearerTokenAuthentication]
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
 
+    def get_queryset(self):
+        if self.request.user.is_superuser:
+            return MovieRental.objects.all()
+        return MovieRental.objects.filter(client=self.request.user.client)
+
     def get_object(self, pk):
         try:
-            return MovieRental.objects.get(pk=pk)
-        except Movie.DoesNotExist:
+            return self.get_queryset().get(pk=pk)
+        except MovieRental.DoesNotExist:
             raise Http404
 
     def get(self, request, pk):
@@ -122,8 +138,11 @@ class MovieDetailsListView(APIView):
     authentication_classes = [SessionAuthentication, BasicAuthentication, BearerTokenAuthentication]
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
 
+    def get_queryset(self):
+        return MovieDetails.objects.all()
+
     def get(self, request):
-        movie_details = MovieDetails.objects.all().order_by('id')
+        movie_details = self.get_queryset().order_by('id')
         serializer = MovieDetailsSerializer(movie_details, many=True)
         return Response(serializer.data)
 
@@ -139,10 +158,13 @@ class MovieDetailsDetailsView(APIView):
     authentication_classes = [SessionAuthentication, BasicAuthentication, BearerTokenAuthentication]
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
 
+    def get_queryset(self):
+        return MovieDetails.objects.all()
+
     def get_object(self, pk):
         try:
-            return MovieDetails.objects.get(pk=pk)
-        except Movie.DoesNotExist:
+            return self.get_queryset().get(pk=pk)
+        except MovieDetails.DoesNotExist:
             raise Http404
 
     def get(self, request, pk):
@@ -168,8 +190,11 @@ class LanguageListView(APIView):
     authentication_classes = [SessionAuthentication, BasicAuthentication, BearerTokenAuthentication]
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
 
+    def get_queryset(self):
+        return Language.objects.all()
+
     def get(self, request):
-        languages = Language.objects.all().order_by('id')
+        languages = self.get_queryset().order_by('id')
         serializer = LanguageSerializer(languages, many=True)
         return Response(serializer.data)
 
@@ -185,10 +210,13 @@ class LanguageDetailsView(APIView):
     authentication_classes = [SessionAuthentication, BasicAuthentication, BearerTokenAuthentication]
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
 
+    def get_queryset(self):
+        return Language.objects.all()
+
     def get_object(self, pk):
         try:
-            return Language.objects.get(pk=pk)
-        except Movie.DoesNotExist:
+            return self.get_queryset().get(pk=pk)
+        except Language.DoesNotExist:
             raise Http404
 
     def get(self, request, pk):
@@ -209,5 +237,166 @@ class LanguageDetailsView(APIView):
         language.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-# TODO: Client serializer and apiview, update models and add category model
 
+class ClientListView(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, BearerTokenAuthentication]
+    permission_classes = [IsAuthenticated, DjangoModelPermissions]
+
+    def get_queryset(self):
+        if self.request.user.is_superuser:
+            return Client.objects.all()
+        return Client.objects.filter(user=self.request.user)
+
+    def get(self, request):
+        clients = self.get_queryset().order_by('id')
+        serializer = ClientSerializer(clients, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = ClientSerializer(data=request.data, many=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ClientDetailsView(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, BearerTokenAuthentication]
+    permission_classes = [IsAuthenticated, DjangoModelPermissions]
+
+    def get_queryset(self):
+        if self.request.user.is_superuser:
+            return Client.objects.all()
+        return Client.objects.filter(user=self.request.user)
+
+    def get_object(self, pk):
+        try:
+            return self.get_queryset().get(pk=pk)
+        except Client.DoesNotExist:
+            raise Http404
+
+    def get(self, request, pk):
+        client = self.get_object(pk)
+        serializer = ClientSerializer(client)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        client = self.get_object(pk)
+        serializer = ClientSerializer(client, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        client = self.get_object(pk)
+        client.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CategoryListView(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, BearerTokenAuthentication]
+    permission_classes = [IsAuthenticated, DjangoModelPermissions]
+
+    def get_queryset(self):
+        return Category.objects.all()
+
+    def get(self, request):
+        categories = self.get_queryset().order_by('id')
+        serializer = CategorySerializer(categories, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = CategorySerializer(data=request.data, many=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CategoryDetailsView(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, BearerTokenAuthentication]
+    permission_classes = [IsAuthenticated, DjangoModelPermissions]
+
+    def get_queryset(self):
+        return Category.objects.all()
+
+    def get_object(self, pk):
+        try:
+            return self.get_queryset().get(pk=pk)
+        except Category.DoesNotExist:
+            raise Http404
+
+    def get(self, request, pk):
+        category = self.get_object(pk)
+        serializer = CategorySerializer(category)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        category = self.get_object(pk)
+        serializer = CategorySerializer(category, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        category = self.get_object(pk)
+        category.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class AddressListView(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, BearerTokenAuthentication]
+    permission_classes = [IsAuthenticated, DjangoModelPermissions]
+
+    def get_queryset(self):
+        if self.request.user.is_superuser:
+            return Address.objects.all()
+        return Address.objects.filter(client=self.request.user.client)
+
+    def get(self, request):
+        address = self.get_queryset().order_by('id')
+        serializer = AddressSerializer(address, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = AddressSerializer(data=request.data, many=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AddressDetailsView(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, BearerTokenAuthentication]
+    permission_classes = [IsAuthenticated, DjangoModelPermissions]
+
+    def get_queryset(self):
+        if self.request.user.is_superuser:
+            return Address.objects.all()
+        return Address.objects.filter(client=self.request.user.client)
+
+    def get_object(self, pk):
+        try:
+            return self.get_queryset().get(pk=pk)
+        except Address.DoesNotExist:
+            raise Http404
+
+    def get(self, request, pk):
+        address = self.get_object(pk)
+        serializer = AddressSerializer(address)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        address = self.get_object(pk)
+        serializer = AddressSerializer(address, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        address = self.get_object(pk)
+        address.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
