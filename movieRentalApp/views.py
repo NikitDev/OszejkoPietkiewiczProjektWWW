@@ -1,5 +1,6 @@
 from django.http import Http404
-from django.shortcuts import render
+from rest_framework.authentication import TokenAuthentication, SessionAuthentication, BasicAuthentication
+from rest_framework.permissions import IsAuthenticated, DjangoModelPermissions
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.response import Response
@@ -15,7 +16,14 @@ from .serializers import MovieDetailsSerializer
 from .serializers import LanguageSerializer
 
 
+class BearerTokenAuthentication(TokenAuthentication):
+    keyword = u"Bearer"
+
+
 class MovieListView(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, BearerTokenAuthentication]
+    permission_classes = [IsAuthenticated, DjangoModelPermissions]
+
     def get(self, request):
         movies = Movie.objects.all().order_by('id')
         serializer = MovieSerializer(movies, many=True)
@@ -30,6 +38,9 @@ class MovieListView(APIView):
 
 
 class MovieDetailsView(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, BearerTokenAuthentication]
+    permission_classes = [IsAuthenticated, DjangoModelPermissions]
+
     def get_object(self, pk):
         try:
             return Movie.objects.get(pk=pk)
@@ -56,12 +67,21 @@ class MovieDetailsView(APIView):
 
 
 class MovieRentalListView(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, BearerTokenAuthentication]
+    permission_classes = [IsAuthenticated, DjangoModelPermissions]
+
+    def get_queryset(self):
+        return MovieRental.objects.all()
+
     def get(self, request):
         movie_rentals = MovieRental.objects.all().order_by('id')
         serializer = MovieRentalSerializer(movie_rentals, many=True)
         return Response(serializer.data)
 
     def post(self, request):
+        # if not request.user.has_perm('movieRentalApp.add_movie_rental'):
+        #     raise PermissionDenied()
+
         serializer = MovieRentalSerializer(data=request.data, many=True)
         if serializer.is_valid():
             serializer.save()
@@ -70,6 +90,9 @@ class MovieRentalListView(APIView):
 
 
 class MovieRentalDetailsView(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, BearerTokenAuthentication]
+    permission_classes = [IsAuthenticated, DjangoModelPermissions]
+
     def get_object(self, pk):
         try:
             return MovieRental.objects.get(pk=pk)
@@ -96,6 +119,9 @@ class MovieRentalDetailsView(APIView):
 
 
 class MovieDetailsListView(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, BearerTokenAuthentication]
+    permission_classes = [IsAuthenticated, DjangoModelPermissions]
+
     def get(self, request):
         movie_details = MovieDetails.objects.all().order_by('id')
         serializer = MovieDetailsSerializer(movie_details, many=True)
@@ -110,6 +136,9 @@ class MovieDetailsListView(APIView):
 
 
 class MovieDetailsDetailsView(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, BearerTokenAuthentication]
+    permission_classes = [IsAuthenticated, DjangoModelPermissions]
+
     def get_object(self, pk):
         try:
             return MovieDetails.objects.get(pk=pk)
@@ -136,6 +165,9 @@ class MovieDetailsDetailsView(APIView):
 
 
 class LanguageListView(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, BearerTokenAuthentication]
+    permission_classes = [IsAuthenticated, DjangoModelPermissions]
+
     def get(self, request):
         languages = Language.objects.all().order_by('id')
         serializer = LanguageSerializer(languages, many=True)
@@ -150,6 +182,9 @@ class LanguageListView(APIView):
 
 
 class LanguageDetailsView(APIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication, BearerTokenAuthentication]
+    permission_classes = [IsAuthenticated, DjangoModelPermissions]
+
     def get_object(self, pk):
         try:
             return Language.objects.get(pk=pk)
@@ -175,3 +210,4 @@ class LanguageDetailsView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 # TODO: Client serializer and apiview, update models and add category model
+
