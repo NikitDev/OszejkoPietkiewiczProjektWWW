@@ -1,10 +1,15 @@
+from django.contrib.auth import login
+from django.contrib.auth.models import Group
 from django.http import Http404
+from django.views.generic import FormView
 from rest_framework.authentication import TokenAuthentication, SessionAuthentication, BasicAuthentication
+from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated, DjangoModelPermissions
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.response import Response
 
+from .forms import UserForm
 from .models import Movie
 from .models import Language
 from .models import MovieDetails
@@ -34,7 +39,10 @@ class MovieListView(APIView):
         return Movie.objects.all()
 
     def get(self, request):
+        title = request.query_params.get('title')
         movies = self.get_queryset().order_by('id')
+        if title:
+            movies = movies.filter(title__icontains=title)
         serializer = MovieSerializer(movies, many=True)
         return Response(serializer.data)
 
@@ -88,7 +96,10 @@ class MovieRentalListView(APIView):
         return MovieRental.objects.filter(client=self.request.user.client)
 
     def get(self, request):
+        user = request.query_params.get('user')
         movie_rentals = self.get_queryset().order_by('id')
+        if user:
+            movie_rentals = movie_rentals.filter(client__id=user)
         serializer = MovieRentalSerializer(movie_rentals, many=True)
         return Response(serializer.data)
 
@@ -400,3 +411,18 @@ class AddressDetailsView(APIView):
         address = self.get_object(pk)
         address.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class UserRegistrationView(FormView):
+    template_name = 'register.html'
+    success_url = 'api/'
+    form_class = UserForm
+
+    def form_valid(self, form):
+        user = form.save()
+        phone_number = form.cleaned_data.get('phone_number')
+        Client.objects.create(user=user, phone_number=phone_number)
+        Token.objects.get_or_create(user=user)
+        user.groups.add(Group.objects.get(name='Clients'))
+        login(self.request, user)
+        return super().form_valid(form)

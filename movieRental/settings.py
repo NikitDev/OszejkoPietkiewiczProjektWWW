@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'phonenumber_field',
     'rest_framework.authtoken',
 
-    'movieRentalApp',
+    'movieRentalApp.apps.MovierentalappConfig',
 ]
 
 MIDDLEWARE = [
