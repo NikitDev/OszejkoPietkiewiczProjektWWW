@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.urls import path
+from rest_framework.authtoken.views import obtain_auth_token
 
 from .views import LanguageListView
 from .views import LanguageDetailsView
@@ -34,5 +35,5 @@ urlpatterns = [
     path('address/<int:pk>/', AddressDetailsView.as_view(), name='address_details'),
     path('category/', CategoryListView.as_view(), name='category_list'),
     path('category/<int:pk>/', CategoryDetailsView.as_view(), name='category_details'),
-
+    path('api-token-auth/', obtain_auth_token),
 ]
