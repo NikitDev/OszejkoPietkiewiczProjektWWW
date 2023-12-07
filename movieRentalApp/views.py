@@ -63,12 +63,12 @@ class MovieDetailsView(APIView):
     permission_classes = [IsAuthenticated, DjangoModelPermissions]
 
     def get_queryset(self):
-        return MovieDetails.objects.all()
+        return Movie.objects.all()
 
     def get_object(self, pk):
         try:
             return self.get_queryset().get(pk=pk)
-        except MovieDetails.DoesNotExist:
+        except Movie.DoesNotExist:
             raise Http404
 
     def get(self, request, pk):
