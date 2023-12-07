@@ -2,9 +2,12 @@ from django.contrib.auth import login
 from django.contrib.auth.models import Group
 from django.http import Http404
 from django.views.generic import FormView
-from rest_framework.authentication import TokenAuthentication, SessionAuthentication, BasicAuthentication
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.authentication import SessionAuthentication
+from rest_framework.authentication import BasicAuthentication
 from rest_framework.authtoken.models import Token
-from rest_framework.permissions import IsAuthenticated, DjangoModelPermissions
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import DjangoModelPermissions
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.response import Response
@@ -39,6 +42,7 @@ class MovieListView(APIView):
         return Movie.objects.all()
 
     def get(self, request):
+        # Custom endpoint search with title
         title = request.query_params.get('title')
         movies = self.get_queryset().order_by('id')
         if title:
@@ -96,6 +100,7 @@ class MovieRentalListView(APIView):
         return MovieRental.objects.filter(client=self.request.user.client)
 
     def get(self, request):
+        # Custom endpoint get all movie rentals for specific user
         user = request.query_params.get('user')
         movie_rentals = self.get_queryset().order_by('id')
         if user:

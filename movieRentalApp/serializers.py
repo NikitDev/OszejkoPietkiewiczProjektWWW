@@ -1,6 +1,9 @@
 from rest_framework.serializers import ModelSerializer
 
-from .models import Movie, Address, Category, Client
+from .models import Movie
+from .models import Address
+from .models import Category
+from .models import Client
 from .models import Language
 from .models import MovieDetails
 from .models import MovieRental
